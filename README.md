@@ -1,6 +1,6 @@
 # Sam Gunby 👋
 **Senior Staff QA & Systems Engineer** 📍 Minden, ON | 📱 705-457-0825 | ✉️ gunbysam@gmail.com  
-🔗 [LinkedIn](https://linkedin.com/in/sam-g-53556664) | 💻 [GitHub](https://github.com/yourusername)
+🔗 [LinkedIn](https://linkedin.com/in/sam-g-53556664) | 💻 [GitHub](https://github.com/Trowa929/sgunby)
 
 ---
 
