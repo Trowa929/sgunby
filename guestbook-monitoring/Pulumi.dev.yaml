@@ -1,0 +1,4 @@
+encryptionsalt: v1:lNTBiCr3FMM=:v1:oB775m/SiUFECBej:7K+HwRtyrNbY1Jbpc9EG5XbnvZwPxw==
+config:
+  guestbook-monitoring:grafanaAdminPassword:
+    secure: v1:3aUhd2CPn6vMS4o5:S/2xnkBc40XJNrCrocjR63Q3eBFth2upp22WOayZ97nh7gc1JtY=
