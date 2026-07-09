@@ -1,0 +1,107 @@
+groups:
+  - name: lifepo4_battery_alerts
+    rules:
+      - alert: BatteryPackVoltageLow
+        expr: battery_pack_voltage_volts < 46
+        for: 2m
+        labels:
+          severity: warning
+          domain: battery
+        annotations:
+          summary: "LiFePO4 pack voltage low on {{ $labels.device }}"
+          description: "Pack voltage is {{ $value | printf \"%.2f\" }} V, below the 46 V warning threshold."
+
+      - alert: BatteryPackVoltageCritical
+        expr: battery_pack_voltage_volts < 44.8
+        for: 1m
+        labels:
+          severity: critical
+          domain: battery
+        annotations:
+          summary: "LiFePO4 pack voltage CRITICAL on {{ $labels.device }}"
+          description: "Pack voltage is {{ $value | printf \"%.2f\" }} V, at/below the BMS low-voltage cutoff (44.8 V). Load shed or charge immediately."
+
+      - alert: BatteryCellImbalance
+        expr: (battery_cell_voltage_max_volts - battery_cell_voltage_min_volts) > 0.08
+        for: 5m
+        labels:
+          severity: warning
+          domain: battery
+        annotations:
+          summary: "Cell voltage imbalance on {{ $labels.device }}"
+          description: "Max-min cell delta is {{ $value | printf \"%.3f\" }} V (>80 mV). BMS balancing may not be keeping up."
+
+      - alert: BatteryTemperatureHigh
+        expr: battery_temperature_celsius > 45
+        for: 3m
+        labels:
+          severity: warning
+          domain: battery
+        annotations:
+          summary: "Battery pack running hot on {{ $labels.device }}"
+          description: "Pack temperature is {{ $value | printf \"%.1f\" }}°C."
+
+      - alert: BLEExporterDown
+        expr: up{job="ble_battery_exporter"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          domain: battery
+        annotations:
+          summary: "Lost contact with battery BLE exporter {{ $labels.device }}"
+          description: "The Raspberry Pi BLE-to-Prometheus bridge has not reported for 5+ minutes. Voltage is unmonitored until this recovers."
+
+  - name: solar_inverter_alerts
+    rules:
+      - alert: GridExportOverLimit
+        expr: inverter_grid_power_watts < -5100
+        for: 2m
+        labels:
+          severity: warning
+          domain: solar
+        annotations:
+          summary: "Grid export exceeding Net Metering cap"
+          description: "Exporting {{ $value | printf \"%.0f\" }} W, above the 5 kW Hydro One export cap."
+
+      - alert: InverterOffline
+        expr: up{job="inverter_exporter"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          domain: solar
+        annotations:
+          summary: "Inverter exporter unreachable"
+          description: "No data from the LuxPower inverter poller for 5+ minutes."
+
+  - name: kubernetes_alerts
+    rules:
+      - alert: GuestbookPodNotReady
+        expr: kube_pod_status_phase{app="guestbook", phase!="Running"} == 1
+        for: 5m
+        labels:
+          severity: warning
+          domain: kubernetes
+        annotations:
+          summary: "Guestbook pod {{ $labels.pod }} not Running"
+          description: "Pod has been in phase {{ $labels.phase }} for 5+ minutes."
+
+      - alert: NodeCPUThrottling
+        expr: rate(container_cpu_cfs_throttled_periods_total[5m]) > 0.25
+        for: 5m
+        labels:
+          severity: warning
+          domain: kubernetes
+        annotations:
+          summary: "Container {{ $labels.container }} is being CPU throttled"
+
+  - name: homelab_alerts
+    rules:
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 10m
+        labels:
+          severity: warning
+          domain: homelab
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }} ({{ $labels.mountpoint }})"
+          description: "Only {{ $value | printf \"%.1f\" }}% free."

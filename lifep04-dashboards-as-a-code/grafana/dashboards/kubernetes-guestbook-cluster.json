@@ -1,0 +1,81 @@
+{
+  "id": null,
+  "uid": "kubernetes-guestbook-cluster",
+  "title": "Kubernetes: Guestbook App & Cluster Health",
+  "description": "Pod health, CPU/memory, and request rate for a Guestbook-style app deployed via Pulumi, plus a general node/cluster health section. Mirrors a common DevOps take-home assignment stack (Pulumi + K8s + Prometheus + Grafana).",
+  "tags": ["kubernetes", "guestbook", "pulumi", "devops", "prometheus"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "row", "title": "Guestbook App", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2, "type": "stat", "title": "Pods Running",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(kube_pod_status_phase{app=\"guestbook\", phase=\"Running\"})", "legendFormat": "Running" }],
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } } },
+      "options": { "colorMode": "background" }
+    },
+    {
+      "id": 3, "type": "stat", "title": "Pod Restarts (1h)",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(increase(kube_pod_container_status_restarts_total{app=\"guestbook\"}[1h]))", "legendFormat": "Restarts" }],
+      "fieldConfig": { "defaults": { "unit": "none", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 5 }] } } },
+      "options": { "colorMode": "value" }
+    },
+    {
+      "id": 4, "type": "stat", "title": "Request Rate",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(rate(http_requests_total{app=\"guestbook\"}[5m]))", "legendFormat": "req/s" }],
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "options": { "graphMode": "area" }
+    },
+    {
+      "id": 5, "type": "stat", "title": "p95 Latency",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app=\"guestbook\"}[5m])) by (le))", "legendFormat": "p95" }],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "CPU Usage per Pod",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"guestbook\"}[5m])) by (pod)", "legendFormat": "{{pod}}" }],
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } } },
+      "description": "Note: on Docker Desktop, cAdvisor metrics via the kubelet may need insecureSkipVerify: true on the ServiceMonitor/scrape TLS config to populate — check Prometheus Targets at http://localhost:9090/targets if this is empty."
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Memory Usage per Pod",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "sum(container_memory_working_set_bytes{namespace=\"guestbook\"}) by (pod)", "legendFormat": "{{pod}}" }],
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "fillOpacity": 10 } } }
+    },
+    {
+      "id": 8, "type": "row", "title": "Cluster Health", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 }
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Node CPU Usage",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "{{instance}}" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "custom": { "drawStyle": "line", "fillOpacity": 10 } } }
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Node Memory Available",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "node_memory_MemAvailable_bytes", "legendFormat": "{{instance}}" }],
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "drawStyle": "line", "fillOpacity": 10 } } }
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+prometheus_client==0.20.0
+# For real hardware, uncomment and use a BLE library to talk to your BMS:
+# bleak==0.22.2          # cross-platform BLE client (works great on RPi)
