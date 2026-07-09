@@ -1,0 +1,247 @@
+{
+  "id": null,
+  "uid": "lifepo4-battery-monitor",
+  "title": "LiFePO4 Battery Bank Monitor (Raspberry Pi / BLE BMS)",
+  "description": "Pack + per-cell voltage, current, temperature and SoC for a LiFePO4 battery bank, read over Bluetooth LE by a Raspberry Pi and pushed to Prometheus. Includes low-voltage and cell-imbalance alerting.",
+  "tags": ["battery", "lifepo4", "raspberry-pi", "ble", "solar", "prometheus"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "10s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "device",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(battery_pack_voltage_volts, device)",
+        "current": { "text": "pi-battery-monitor-01", "value": "pi-battery-monitor-01" },
+        "refresh": 2,
+        "includeAll": false
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "name": "Battery Alerts",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "enable": true,
+        "iconColor": "red",
+        "expr": "ALERTS{domain=\"battery\", alertstate=\"firing\"}"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "row", "title": "Pack Overview",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2, "type": "stat", "title": "Pack Voltage",
+      "gridPos": { "h": 5, "w": 5, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "battery_pack_voltage_volts{device=\"$device\"}", "legendFormat": "Pack V" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "volt", "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 44.8 },
+              { "color": "yellow", "value": 46 },
+              { "color": "green", "value": 49 }
+            ]
+          }
+        }
+      },
+      "options": { "graphMode": "area", "colorMode": "background", "textMode": "auto" }
+    },
+    {
+      "id": 3, "type": "gauge", "title": "State of Charge",
+      "gridPos": { "h": 5, "w": 5, "x": 5, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "battery_soc_percent{device=\"$device\"}", "legendFormat": "SoC" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 15 },
+              { "color": "yellow", "value": 30 },
+              { "color": "green", "value": 50 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4, "type": "stat", "title": "Current",
+      "gridPos": { "h": 5, "w": 5, "x": 10, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "battery_current_amps{device=\"$device\"}", "legendFormat": "A" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "amp", "decimals": 1,
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }
+        }
+      },
+      "options": { "graphMode": "area", "colorMode": "value", "textMode": "auto" }
+    },
+    {
+      "id": 5, "type": "stat", "title": "Pack Temperature",
+      "gridPos": { "h": 5, "w": 4, "x": 15, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "battery_temperature_celsius{device=\"$device\"}", "legendFormat": "Temp" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius", "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 40 },
+              { "color": "red", "value": 45 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 6, "type": "stat", "title": "BMS Status",
+      "gridPos": { "h": 5, "w": 5, "x": 19, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "up{job=\"ble_battery_exporter\", device=\"$device\"}", "legendFormat": "status" }],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "OFFLINE", "color": "red" } } },
+            { "type": "value", "options": { "1": { "text": "ONLINE", "color": "green" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        }
+      },
+      "options": { "colorMode": "background", "textMode": "value" }
+    },
+    {
+      "id": 7, "type": "row", "title": "Trends",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 }
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "Pack Voltage Over Time",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "battery_pack_voltage_volts{device=\"$device\"}", "legendFormat": "Pack Voltage" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "volt",
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "transparent", "value": null },
+              { "color": "red", "value": 44.8 },
+              { "color": "orange", "value": 46 }
+            ]
+          }
+        }
+      },
+      "options": { "tooltip": { "mode": "multi" } }
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Cell Voltage Spread (Min / Max / Delta)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "battery_cell_voltage_min_volts{device=\"$device\"}", "legendFormat": "Min cell" },
+        { "expr": "battery_cell_voltage_max_volts{device=\"$device\"}", "legendFormat": "Max cell" },
+        { "expr": "battery_cell_voltage_max_volts{device=\"$device\"} - battery_cell_voltage_min_volts{device=\"$device\"}", "legendFormat": "Delta" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "volt", "decimals": 3,
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 5 }
+        }
+      },
+      "options": { "tooltip": { "mode": "multi" } }
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Current (Charge / Discharge)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "battery_current_amps{device=\"$device\"}", "legendFormat": "Current" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "amp",
+          "custom": { "drawStyle": "bars", "fillOpacity": 60, "lineWidth": 0 }
+        }
+      }
+    },
+    {
+      "id": 11, "type": "bargauge", "title": "Per-Cell Voltages (1-16)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "battery_cell_voltage_volts{device=\"$device\"}", "legendFormat": "Cell {{cell}}", "format": "time_series", "instant": true }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "volt", "decimals": 3, "min": 3.0, "max": 3.65,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 3.1 },
+              { "color": "green", "value": 3.2 },
+              { "color": "yellow", "value": 3.55 },
+              { "color": "red", "value": 3.6 }
+            ]
+          }
+        }
+      },
+      "options": { "orientation": "horizontal", "displayMode": "gradient" }
+    },
+    {
+      "id": 12, "type": "row", "title": "BMS Health", "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 }
+    },
+    {
+      "id": 13, "type": "stat", "title": "Charge Cycles",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "battery_cycle_count{device=\"$device\"}", "legendFormat": "Cycles" }],
+      "fieldConfig": { "defaults": { "unit": "none" } }
+    },
+    {
+      "id": 14, "type": "stat", "title": "Time Since Last BLE Read",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "time() - battery_last_seen_timestamp{device=\"$device\"}", "legendFormat": "Age" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 60 },
+              { "color": "red", "value": 300 }
+            ]
+          }
+        }
+      },
+      "options": { "colorMode": "value" }
+    },
+    {
+      "id": 15, "type": "state-timeline", "title": "Low-Voltage Alert State",
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "ALERTS{domain=\"battery\", device=\"$device\"}", "legendFormat": "{{alertname}}" }],
+      "fieldConfig": { "defaults": {} }
+    }
+  ]
+}
