@@ -1,0 +1,125 @@
+{
+  "id": null,
+  "uid": "solar-inverter-overview",
+  "title": "Solar & Battery Inverter Overview",
+  "description": "PV production, battery SoC, load, and grid import/export for a hybrid solar+battery inverter (e.g. LuxPower LXP series) running in self-consumption / zero-export mode against a net-metering export cap.",
+  "tags": ["solar", "inverter", "battery", "prometheus"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "type": "row", "title": "Live Status",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2, "type": "stat", "title": "PV Power",
+      "gridPos": { "h": 5, "w": 5, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "inverter_pv_power_watts", "legendFormat": "PV" }],
+      "fieldConfig": { "defaults": { "unit": "watt", "color": { "mode": "fixed", "fixedColor": "yellow" } } },
+      "options": { "graphMode": "area", "colorMode": "value" }
+    },
+    {
+      "id": 3, "type": "gauge", "title": "Battery SoC",
+      "gridPos": { "h": 5, "w": 5, "x": 5, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "inverter_battery_soc_percent", "legendFormat": "SoC" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 20 },
+              { "color": "green", "value": 50 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4, "type": "stat", "title": "House Load",
+      "gridPos": { "h": 5, "w": 5, "x": 10, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "inverter_load_power_watts", "legendFormat": "Load" }],
+      "fieldConfig": { "defaults": { "unit": "watt" } },
+      "options": { "graphMode": "area" }
+    },
+    {
+      "id": 5, "type": "stat", "title": "Grid Power (+ import / - export)",
+      "gridPos": { "h": 5, "w": 5, "x": 15, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "inverter_grid_power_watts", "legendFormat": "Grid" }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": -5000 },
+              { "color": "red", "value": -5100 }
+            ]
+          }
+        }
+      },
+      "options": { "colorMode": "value" }
+    },
+    {
+      "id": 6, "type": "stat", "title": "Operating Mode",
+      "gridPos": { "h": 5, "w": 4, "x": 20, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "inverter_mode", "legendFormat": "mode" }],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "Self-Consumption", "color": "green" } } },
+            { "type": "value", "options": { "2": { "text": "Storm Guard (AC Charge)", "color": "blue" } } },
+            { "type": "value", "options": { "0": { "text": "Unknown", "color": "red" } } }
+          ]
+        }
+      },
+      "options": { "colorMode": "background", "textMode": "value" }
+    },
+    {
+      "id": 7, "type": "row", "title": "Power Flow", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 6 }
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "PV / Battery / Grid / Load",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "inverter_pv_power_watts", "legendFormat": "PV Production" },
+        { "expr": "inverter_battery_power_watts", "legendFormat": "Battery (+charge/-discharge)" },
+        { "expr": "inverter_grid_power_watts", "legendFormat": "Grid (+import/-export)" },
+        { "expr": "inverter_load_power_watts", "legendFormat": "House Load" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "watt", "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 8 } }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Battery State of Charge (24h)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "inverter_battery_soc_percent", "legendFormat": "SoC" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "custom": { "drawStyle": "line", "fillOpacity": 20 } } }
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Grid Export vs 5kW Net-Metering Cap",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "clamp_min(-inverter_grid_power_watts, 0)", "legendFormat": "Export" },
+        { "expr": "inverter_grid_export_limit_watts", "legendFormat": "Cap (5kW)" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "watt", "custom": { "drawStyle": "line", "lineWidth": 2 } } }
+    }
+  ]
+}
